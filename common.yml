@@ -1,0 +1,43 @@
+---
+- hosts: all
+  tasks:
+    - name: Install Packages
+      yum:
+        name: "{{ item }}"
+        state: latest
+      with_items:
+        - libselinux-python
+        - vim
+        - man
+        - mlocate
+
+    - name: Install python-simplejson for EL5
+      yum:
+        name: python-simplejson
+        state: latest
+      when: ansible_os_family == "RedHat" and ansible_distribution_major_version == '5'
+
+    - name: Disable selinux
+      selinux:
+        state: disabled
+
+    - name: Install EPEL Repo (EL)
+      yum:
+        pkg: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-{{ ansible_distribution_major_version }}.noarch.rpm"
+        state: present
+      when: ansible_distribution == "RedHat" or ansible_distribution == "CentOS"
+
+    - name: Update All The Things
+      yum:
+        pkg: "*"
+        state: latest
+        update_cache: yes
+
+    - name: Updated Locate Database
+      shell: updatedb
+
+    - name: Rebooting System
+      command: shutdown -r now "Ansible triggered reboot"
+      async: 0
+      poll: 0
+      ignore_errors: true
